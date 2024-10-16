@@ -1,7 +1,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "cuda_error.h"
-#include "saxpyKernel.h"
+#include "gpuLib.h"
 
 #include <stdio.h>
 
@@ -15,37 +15,16 @@ __global__ void saxpyKernel(const float a, float* c, const float *y,
 
 int main(int argc, char* argv[]) {
 
-    bool verify = false;
-    bool print = false;
-    unsigned int numThreads = 10;
-    unsigned int arraySize = 10;
+    args_t args;
+    parsArgs(&args, argc, argv);
+    
+    bool verify = args.verify;
+    bool print = args.print;
+    unsigned int numThreads = args.numThreads_x;
+    unsigned int arraySize = args.M;
     const float maxElementSize = 10.0;
     const float a = 10.0;
-
-    if(argc > 7) {
-        printf("Wrong number of args.\n");
-        exit(-1);
-    }
-
-    if(argc > 1) {
-        for(int i = 1; i < argc; i++) {
-            if(strcmp(argv[i], "--verify") == 0) {
-                verify = true;
-            } else if(strcmp(argv[i], "--print_results") == 0) {
-                print = true;
-            } else if(strcmp(argv[i], "--num_threads") == 0) {
-                numThreads = atoi(argv[i+1]);
-                i++;
-            } else if(strcmp(argv[i], "--array_size") == 0) {
-                arraySize = atoi(argv[i+1]);
-                i++;
-            } else {
-                printf("Unrecognized arg. Aborting\n"); 
-                exit(-1);
-            }
-        }
-    }
-    
+ 
     // Cant assign more threads than there are elements in the arrays
     assert(numThreads <= arraySize);
 
@@ -75,7 +54,7 @@ int main(int argc, char* argv[]) {
     saxpyWithCuda(c, x, y, a, arraySize, verify, numThreads);
     
     if(print) {
-        printResults(c, x, y, a, arraySize);
+        printResultsVector(c, x, y, a, arraySize);
     }
 
     // cudaDeviceReset must be called before exiting in order for profiling and
@@ -84,6 +63,7 @@ int main(int argc, char* argv[]) {
 
     free(x);
     free(y);
+    free(c);
     
     return 0;
 }
@@ -130,51 +110,11 @@ void saxpyWithCuda(float* c, const float *x, const float *y, const float a,
 
     // Verify CUDA computation is correct
     if(verify) {
-        verifyCuda(cpu_c, c, size);
+        verifyCudaVector(cpu_c, c, size);
         free(cpu_c);
     }
 
     checkCuda(cudaFree(dev_y));
     checkCuda(cudaFree(dev_x));
     checkCuda(cudaFree(dev_c));
-}
-
-void saxpyWithCpu(float* c, const float *x, const float *y, const float a, 
-        const unsigned int size) {
-    for(int i = 0; i < size; i++) {
-        c[i] = a * y[i] + x[i]; 
-    }
-    //printResults(c, x, y, a, size);
-}
-
-void verifyCuda(const float* saxpyCpu, const float* saxpyCuda, const unsigned int size) {
-    const float tol = 1e-4; 
-    bool error = false;
-    for(int i = 0; i < size; i++) {
-        if(abs(saxpyCpu[i] - saxpyCuda[i]) > tol) {
-            error = true;
-            printf("CUDA saxpy computation failed at index %i\n", i);
-            printf("CPU: %f, GPU: %f\n", saxpyCpu[i], saxpyCuda[i]);
-            break;
-        }
-    }
-    if(error == false) {
-        printf("CUDA saxpy verification check passed.\n");
-    }
-}
-
-void printResults(const float* c, const float* x, const float* y, const float a, const unsigned int size) {
-    printf("{");
-    for(int i = 0; i < size-1; i++) {
-        printf("%.2f, ", y[i]); 
-    }
-    printf("%.2f} * %.2f + \n{", y[size-1], a);
-    for(int i = 0; i < size-1; i++) {
-        printf("%.2f, ", x[i]); 
-    }
-    printf("%.2f} = \n{", x[size-1]);
-    for(int i = 0; i < size-1; i++) {
-        printf("%.2f, ", c[i]); 
-    }
-    printf("%.2f}\n", c[size-1]);
 }
