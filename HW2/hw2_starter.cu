@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cuda_error.h"
+//#include "cuda_profiler_api.h"
+#include "time.h"
 
 #define STB_IMAGE_IMPLEMENTATION // this is needed
 #include "../util/stb_image.h"  // download from class website files
@@ -28,27 +30,111 @@ __global__ void blurFilterKernel(unsigned char* d_blurred_image, const unsigned 
     int idx_x = blockIdx.x * blockDim.x + threadIdx.x;
     int idx_y = blockIdx.y * blockDim.y + threadIdx.y;
     const int blur_size = BLUR_FILTER_WIDTH / 2;
+    
+    //printf("%.2f\n", normalizer);
 
     if((idx_x < x_cols) && (idx_y < y_rows)) {
         int pixVal = 0;
-        int pixels = 0;
+        float normalizer = 0;
+
+        for(int blurRow = -blur_size; blurRow < blur_size + 1; blurRow++) {
+            for(int blurCol = -blur_size; blurCol < blur_size + 1; blurCol++) {
+                int curRow = idx_x + blurRow;
+                int curCol = idx_y + blurCol;
+                unsigned int filter_idx;
+                unsigned int img_idx;
+                if(curRow > -1 && curRow < y_rows && curCol > -1 && curCol < x_cols) {
+                    filter_idx = (blurRow + blur_size) * BLUR_FILTER_WIDTH + (blurCol + blur_size);
+                    normalizer += d_blur_filter[filter_idx];
+                    img_idx = curRow * x_cols + curCol;
+                    pixVal += (int)(d_input_image[img_idx] * d_blur_filter[filter_idx]);
+                }
+            }
+        }
+        d_blurred_image[idx_x * x_cols + idx_y] = (unsigned char)(pixVal / normalizer);
+    }
+}
+
+// blur kernel #2 - device shared memory (static alloc)
+__global__ void blurFilterKernelStaticSharedMem(unsigned char* d_blurred_image, const unsigned char* d_input_image, 
+        const unsigned char* d_blur_filter, const unsigned int x_cols, const unsigned int y_rows, 
+        const unsigned int filter_size) {
+    
+    int idx_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx_y = blockIdx.y * blockDim.y + threadIdx.y;
+    const int blur_size = BLUR_FILTER_WIDTH / 2;
+
+    __shared__ float ds_blurFilt[BLUR_FILTER_WIDTH][BLUR_FILTER_WIDTH];
+    
+    // Load filter into shared memory
+    for(int ty = threadIdx.y; ty < BLUR_FILTER_WIDTH; ty += blockDim.y) { 
+        for(int tx = threadIdx.x; tx < BLUR_FILTER_WIDTH; tx += blockDim.x) { 
+            ds_blurFilt[ty][tx] = d_blur_filter[ty * blockDim.x + tx];
+        }
+    }
+
+    // Wait for kernel load to complete
+    __syncthreads();
+    
+    if((idx_x < x_cols) && (idx_y < y_rows)) {
+        int pixVal = 0;
+        float normalizer = 0;
 
         for(int blurRow = -blur_size; blurRow < blur_size + 1; blurRow++) {
             for(int blurCol = -blur_size; blurCol < blur_size + 1; blurCol++) {
                 int curRow = idx_x + blurRow;
                 int curCol = idx_y + blurCol;
                 if(curRow > -1 && curRow < y_rows && curCol > -1 && curCol < x_cols) {
-                    pixVal += d_input_image[curRow * x_cols + curCol];
-                    pixels++;
+                    float coeff = ds_blurFilt[blurRow + blur_size][blurCol + blur_size];
+                    normalizer += coeff;
+                    unsigned int img_idx = curRow * x_cols + curCol;
+                    pixVal += (int)(d_input_image[img_idx] * coeff);
                 }
             }
         }
-        d_blurred_image[idx_x * x_cols + idx_y] = (unsigned char)(pixVal / pixels);
+        d_blurred_image[idx_x * x_cols + idx_y] = (unsigned char)(pixVal / normalizer);
     }
 }
 
-// blur kernel #2 - device shared memory (static alloc)
 // blur kernel #2 - device shared memory (dynamic alloc)
+extern __shared__ float s_filter[];
+
+__global__ void blurFilterKernelDynamicSharedMem(unsigned char* d_blurred_image, const unsigned char* d_input_image, 
+        const unsigned char* d_blur_filter, const unsigned int x_cols, const unsigned int y_rows, 
+        const unsigned int filter_size) {
+    
+    int idx_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx_y = blockIdx.y * blockDim.y + threadIdx.y;
+    const int blur_size = BLUR_FILTER_WIDTH / 2;
+
+    // Load filter into shared memory
+    for(int i = threadIdx.x + blockDim.x * threadIdx.y; i < filter_size; i += blockDim.x + blockDim.y) {
+        s_filter[i] = d_blur_filter[i];
+    }
+
+    // Wait for kernel load to complete
+    __syncthreads();
+    
+    if((idx_x < x_cols) && (idx_y < y_rows)) {
+        int pixVal = 0;
+        float normalizer = 0;
+
+        for(int blurRow = -blur_size; blurRow < blur_size + 1; blurRow++) {
+            for(int blurCol = -blur_size; blurCol < blur_size + 1; blurCol++) {
+                int curRow = idx_x + blurRow;
+                int curCol = idx_y + blurCol;
+                if(curRow > -1 && curRow < y_rows && curCol > -1 && curCol < x_cols) {
+                    unsigned int filter_idx = (blurRow + blur_size) * BLUR_FILTER_WIDTH + (blurCol + blur_size);
+                    float coeff = s_filter[filter_idx];
+                    normalizer += coeff;
+                    unsigned int img_idx = curRow * x_cols + curCol;
+                    pixVal += (int)(d_input_image[img_idx] * coeff);
+                }
+            }
+        }
+        d_blurred_image[idx_x * x_cols + idx_y] = (unsigned char)(pixVal / normalizer);
+    }
+}
 
 
 // EXTRA CREDIT
@@ -57,7 +143,7 @@ __global__ void blurFilterKernel(unsigned char* d_blurred_image, const unsigned 
 
 int main() {
      // read input image from file - be aware of image pixel bit-depth and resolution (horiz x vertical)
-    const char filename[] = "./hw2_testimage1.png";
+    const char filename[] = "./hw2_testimage2.png";
     int x_cols = 0;
     int y_rows = 0;
     int n_pixdepth = 0;
@@ -141,7 +227,9 @@ void blurWithCuda(unsigned char* h_blurred_image, const unsigned char* h_input_i
     dim3 DimGrid((y_rows-1)/16+1, (x_cols-1)/16+1);
     dim3 DimBlock(16, 16, 1);
 
-    blurFilterKernel<<<DimGrid,DimBlock>>>(d_blurred_image, d_input_image, d_blur_filter, 
+    int shared_mem_size = filter_size;
+    clock_t begin = clock();
+    blurFilterKernelStaticSharedMem<<<DimGrid, DimBlock, shared_mem_size, 0>>>(d_blurred_image, d_input_image, d_blur_filter, 
             x_cols, y_rows, filter_size);
 
     // Check for any errors launching the kernel
@@ -150,6 +238,9 @@ void blurWithCuda(unsigned char* h_blurred_image, const unsigned char* h_input_i
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
     // any errors encountered during the launch.
     checkCuda(cudaDeviceSynchronize());
+    clock_t end = clock();
+    double time_spent = (double)((end - begin) / ((double)1000));
+    printf("%f\n", time_spent);
 
     // Copy output vector from GPU buffer to host memory.
     checkCuda(cudaMemcpy(h_blurred_image, d_blurred_image, image_size, cudaMemcpyDeviceToHost));
