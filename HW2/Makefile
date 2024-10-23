@@ -1,7 +1,7 @@
 NAME=hw2_starter
 
 build:
-	nvcc -o $(NAME) $(NAME).cu
+	nvcc -g -G -o $(NAME) $(NAME).cu
 
 #build: gpuLib.o $(NAME).o
 #	nvcc -o $(NAME) $(NAME).o gpuLib.o
