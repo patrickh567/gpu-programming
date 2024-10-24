@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "cuda_error.h"
-//#include "cuda_profiler_api.h"
+#include <sstream>
 #include "time.h"
 
 #define STB_IMAGE_IMPLEMENTATION // this is needed
@@ -18,7 +18,8 @@
 #define BLUR_FILTER_WIDTH 9  // 9x9 (square) Gaussian blur filter
 const float BLUR_FILT[81] = { 0.1084,0.1762,0.2494,0.3071,0.3292,0.3071,0.2494,0.1762,0.1084,0.1762,0.2865,0.4054,0.4994,0.5353,0.4994,0.4054,0.2865,0.1762,0.2494,0.4054,0.5738,0.7066,0.7575,0.7066,0.5738,0.4054,0.2494,0.3071,0.4994,0.7066,0.8703,0.9329,0.8703,0.7066,0.4994,0.3071,0.3292,0.5353,0.7575,0.9329,1.0000,0.9329,0.7575,0.5353,0.3292,0.3071,0.4994,0.7066,0.8703,0.9329,0.8703,0.7066,0.4994,0.3071,0.2494,0.4054,0.5738,0.7066,0.7575,0.7066,0.5738,0.4054,0.2494,0.1762,0.2865,0.4054,0.4994,0.5353,0.4994,0.4054,0.2865,0.1762,0.1084,0.1762,0.2494,0.3071,0.3292,0.3071,0.2494,0.1762,0.1084};
 
-void blurWithCuda(unsigned char* h_blurred_image, const unsigned char* h_input_image, 
+void blurWithCuda(void (*kernel)(unsigned char*, const unsigned char*, const unsigned char*, const unsigned int, const unsigned int, const unsigned int),
+        unsigned char* h_blurred_image, const unsigned char* h_input_image, 
         const unsigned int image_size, const unsigned int x_cols, const unsigned int y_rows);
 
 // DEFINE your CUDA blur kernel function(s) here
@@ -142,14 +143,14 @@ void sequentialBlurKernel(unsigned char* h_blurred_image, const unsigned char* h
 
     const int blur_size = BLUR_FILTER_WIDTH / 2;
     
-    for(int idx_x = 0; idx_x < x_cols; idx_x++) { 
-        for(int idx_y = 0; idx_y < y_rows; idx_y++) { 
+    for(int idx_y = 0; idx_y < y_rows; idx_y++) { 
+        for(int idx_x = 0; idx_x < x_cols; idx_x++) { 
             int pixVal = 0;
             float normalizer = 0;
             for(int blurRow = -blur_size; blurRow < blur_size + 1; blurRow++) {
                 for(int blurCol = -blur_size; blurCol < blur_size + 1; blurCol++) {
-                    int curRow = idx_x + blurRow;
-                    int curCol = idx_y + blurCol;
+                    int curRow = (idx_y + blurCol) * x_cols;
+                    int curCol = idx_x + blurRow;
                     if(curRow > -1 && curRow < y_rows && curCol > -1 && curCol < x_cols) {
                         unsigned int filter_idx = (blurRow + blur_size) * BLUR_FILTER_WIDTH + (blurCol + blur_size);
                         float coeff = BLUR_FILT[filter_idx];
@@ -159,26 +160,67 @@ void sequentialBlurKernel(unsigned char* h_blurred_image, const unsigned char* h
                     }
                 }
             }
-            h_blurred_image[idx_x * x_cols + idx_y] = (unsigned char)(pixVal / normalizer);
+            unsigned int blurred_image_idx = idx_y * x_cols + idx_x;
+            if(blurred_image_idx > x_cols * y_rows) {
+                printf("idx_y * x_cols = %i\n", idx_y * x_cols);
+                printf("idx_x = %i\n", idx_x);
+            }
+            h_blurred_image[blurred_image_idx] = (unsigned char)(pixVal / normalizer);
         }
     }
 }
 
-
 int main() {
      // read input image from file - be aware of image pixel bit-depth and resolution (horiz x vertical)
-    const char filename[] = "./hw2_testimage1.png";
-    int x_cols = 0;
-    int y_rows = 0;
-    int n_pixdepth = 0;
-    unsigned char* h_input_image = stbi_load(filename, &x_cols, &y_rows, &n_pixdepth, 1);
-    int image_size = x_cols * y_rows * sizeof(unsigned char);
+    char filenames[4][30] = {"./hw2_testimage1.png", "./hw2_testimage2.png", "./hw2_testimage3.png", "./hw2_testimage4.png"};
+    char outfilenames[4][30] = {"./hw2_outimage1.png", "./hw2_outimage2.png", "./hw2_outimage3.png", "./hw2_outimage4.png"};
+    char static_outfilenames[4][30] = {"./hw2_static_outimage1.png", "./hw2_static_outimage2.png", "./hw2_static_outimage3.png", "./hw2_static_outimage4.png"};
+    char dynamic_outfilenames[4][30] = {"./hw2_dynamic_outimage1.png", "./hw2_dynamic_outimage2.png", "./hw2_dynamic_outimage3.png", "./hw2_dynamic_outimage4.png"};
+    for(int i = 0; i < 4; i++) {
+        char* filename = filenames[i];
+        printf("Blurring %s\n", filename);
+        printf("------------------------------------------ \n\n");
+        int x_cols = 0;
+        int y_rows = 0;
+        int n_pixdepth = 0;
 
-    unsigned char* h_blurred_image = (unsigned char*)malloc(image_size);
+        unsigned char* h_input_image = stbi_load(filename, &x_cols, &y_rows, &n_pixdepth, 1);
+        int image_size = x_cols * y_rows * sizeof(unsigned char);
+        unsigned char* h_blurred_image = (unsigned char*)malloc(image_size);
+        const unsigned int filter_size = sizeof(BLUR_FILT) / sizeof(float);
+        
+        printf("Running blur kernel using global memory...\n");
+        blurWithCuda(&blurFilterKernel, h_blurred_image, h_input_image, image_size, x_cols, y_rows);
+        stbi_write_png(outfilenames[i], x_cols, y_rows, 1, h_blurred_image, x_cols * n_pixdepth);
+        free(h_blurred_image);
+        h_blurred_image = (unsigned char*)malloc(image_size);
+        printf("\nRunning blur kernel using static shared memory...\n");
+        blurWithCuda(&blurFilterKernelStaticSharedMem, h_blurred_image, h_input_image, image_size, x_cols, y_rows);
+        stbi_write_png(static_outfilenames[i], x_cols, y_rows, 1, h_blurred_image, x_cols * n_pixdepth);
+        free(h_blurred_image);
+        h_blurred_image = (unsigned char*)malloc(image_size);
+        printf("\nRunning blur kernel using dynamic shared memory...\n");
+        blurWithCuda(&blurFilterKernelDynamicSharedMem, h_blurred_image, h_input_image, image_size, x_cols, y_rows);
+        stbi_write_png(dynamic_outfilenames[i], x_cols, y_rows, 1, h_blurred_image, x_cols * n_pixdepth);
+        free(h_blurred_image);
+        h_blurred_image = (unsigned char*)malloc(image_size);
+        printf("\nRunning CPU sequential blur kernel...\n");
+        clock_t cpu_timer_begin = clock();
+        sequentialBlurKernel(h_blurred_image, h_input_image, x_cols, y_rows, filter_size);
+        clock_t cpu_timer_end = clock();
+        double time_spent_cpu_timer = (double)((cpu_timer_end - cpu_timer_begin) / ((double)1000));
+        printf("CPU Timer: %f ms\n\n", time_spent_cpu_timer);
+        free(h_input_image);
+        free(h_blurred_image);
+    }
+    return 0;
 
-    //blurWithCuda(h_blurred_image, imgData, imgSize, x_cols, y_rows);
+}
+    
+void blurWithCuda(void (*kernel)(unsigned char*, const unsigned char*, const unsigned char*, const unsigned int, const unsigned int, const unsigned int), 
+        unsigned char* h_blurred_image, const unsigned char* h_input_image, 
+        const unsigned int image_size, const unsigned int x_cols, const unsigned int y_rows) {
 
-    // setup additional host variables, allocate host memory as needed
     unsigned char* d_blurred_image;
     unsigned char* d_input_image;
     unsigned char* d_blur_filter;
@@ -186,137 +228,54 @@ int main() {
 
     // Choose which GPU to run on, change this on a multi-GPU system.
     checkCuda(cudaSetDevice(0));
-
+    
     // START timer #1
     clock_t timer1_begin = clock();
 
-    // allocate device memory
+    // Allocate GPU buffers for three vectors (two input, one output)    .
     checkCuda(cudaMalloc((void**)&d_blurred_image, image_size));
     checkCuda(cudaMalloc((void**)&d_input_image, image_size));
     checkCuda(cudaMalloc((void**)&d_blur_filter, sizeof(BLUR_FILT)));
 
-    // copy host data to device
+    // Copy input vectors from host memory to GPU buffers.
     checkCuda(cudaMemcpy(d_input_image, h_input_image, image_size, cudaMemcpyHostToDevice));
     checkCuda(cudaMemcpy(d_blur_filter, &BLUR_FILT, BLUR_FILTER_WIDTH * BLUR_FILTER_WIDTH, 
             cudaMemcpyHostToDevice));
-
+    
+    dim3 DimGrid((y_rows-1)/16+1, (x_cols-1)/16+1);
+    dim3 DimBlock(16, 16, 1);
+    int shared_mem_size = filter_size;
+    
     // START timer #2
     clock_t timer2_begin = clock();
-
-    // launch kernel --- use appropriate heuristics to determine #threads/block and #blocks/grid to ensure coverage of your 2D data range
-    //dim3 DimGrid((y_rows-1)/16+1, (x_cols-1)/16+1);
-    //dim3 DimBlock(16, 16, 1);
-
-    //int shared_mem_size = filter_size;
-
-    blurFilterKernel<<<1, 1>>>(d_blurred_image, d_input_image, d_blur_filter, 
-            x_cols, y_rows, filter_size);
-    //blurFilterKernel<<<DimGrid, DimBlock, shared_mem_size, 0>>>(d_blurred_image, d_input_image, d_blur_filter, 
-    //        x_cols, y_rows, filter_size);
-
-    //blurFilterKernelStaticSharedMem<<<DimGrid, DimBlock, shared_mem_size, 0>>>(d_blurred_image, d_input_image, d_blur_filter, 
-    //        x_cols, y_rows, filter_size);
-
-    //blurFilterKernelDynamicSharedMem<<<DimGrid, DimBlock, shared_mem_size, 0>>>(d_blurred_image, d_input_image, d_blur_filter, 
-    //        x_cols, y_rows, filter_size);
+ 
+    // Launch kernel
+    (*kernel)<<<DimGrid, DimBlock, shared_mem_size, 0>>>(d_blurred_image, d_input_image, d_blur_filter, x_cols, y_rows, filter_size);
+    //(*kernel)<<<1, 1>>>(d_blurred_image, d_input_image, d_blur_filter, x_cols, y_rows, filter_size);
 
     // Check for any errors launching the kernel
     checkCuda(cudaGetLastError());
-    //if (cudaStatus != cudaSuccess) {
-    //    fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-    //    goto Error;
-    //}
-
-    // call cudaDeviceSynchronize() to wait for the kernel to finish, and return
+    
+    // cudaDeviceSynchronize waits for the kernel to finish, and returns
     // any errors encountered during the launch.
     checkCuda(cudaDeviceSynchronize());
-     
+    
     // STOP timer #2
     clock_t timer2_end = clock();
-    // 
-    // retrieve result data from device back to host
-    checkCuda(cudaMemcpy(h_blurred_image, d_blurred_image, image_size, cudaMemcpyDeviceToHost));
 
+    // Copy output vector from GPU buffer to host memory.
+    checkCuda(cudaMemcpy(h_blurred_image, d_blurred_image, image_size, cudaMemcpyDeviceToHost));
+    
     // STOP timer #1
     clock_t timer1_end = clock();
-
-    // cudaDeviceReset( ) must be called in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    //cudaDeviceReset();
-
-    // save result output image data to file
-    const char imgFileOut[] = "./hw2_outimage1.png";
-    stbi_write_png(imgFileOut, x_cols, y_rows, 1, h_blurred_image, x_cols * n_pixdepth);
-
-
-    // EXTRA CREDIT:
-    // start timer #3
-    clock_t cpu_timer_begin = clock();
-    sequentialBlurKernel(h_blurred_image, h_input_image, x_cols, y_rows, filter_size);
-    // stop timer #3
-    clock_t cpu_timer_end = clock();
-
-    // retrieve and save timer results (write to console or file)
+    
     double time_spent_timer1 = (double)((timer1_end - timer1_begin) / ((double)1000));
     double time_spent_timer2 = (double)((timer2_end - timer2_begin) / ((double)1000));
-    double time_spent_cpu_timer = (double)((cpu_timer_end - cpu_timer_begin) / ((double)1000));
     printf("Timer 1: %f ms\n", time_spent_timer1);
     printf("Timer 2: %f ms\n", time_spent_timer2);
-    printf("CPU Timer: %f ms\n", time_spent_cpu_timer);
- 
-//Error:  // assumes error macro has a goto Error statement
+
     checkCuda(cudaFree(d_blurred_image));
     checkCuda(cudaFree(d_input_image));
     checkCuda(cudaFree(d_blur_filter));
 
-    // free host and device memory
-
-    return 0;
 }
-
-//void blurWithCuda(unsigned char* h_blurred_image, const unsigned char* h_input_image, 
-//        const unsigned int image_size, const unsigned int x_cols, const unsigned int y_rows) {
-//
-//    unsigned char* d_blurred_image;
-//    unsigned char* d_input_image;
-//    unsigned char* d_blur_filter;
-//    const unsigned int filter_size = sizeof(BLUR_FILT) / sizeof(float);
-//
-//    // Choose which GPU to run on, change this on a multi-GPU system.
-//    checkCuda(cudaSetDevice(0));
-//
-//    // Allocate GPU buffers for three vectors (two input, one output)    .
-//    checkCuda(cudaMalloc((void**)&d_blurred_image, image_size));
-//    checkCuda(cudaMalloc((void**)&d_input_image, image_size));
-//    checkCuda(cudaMalloc((void**)&d_blur_filter, sizeof(BLUR_FILT)));
-//
-//    // Copy input vectors from host memory to GPU buffers.
-//    checkCuda(cudaMemcpy(d_input_image, h_input_image, image_size, cudaMemcpyHostToDevice));
-//    checkCuda(cudaMemcpy(d_blur_filter, &BLUR_FILT, BLUR_FILTER_WIDTH * BLUR_FILTER_WIDTH, 
-//            cudaMemcpyHostToDevice));
-//    
-//    dim3 DimGrid((y_rows-1)/16+1, (x_cols-1)/16+1);
-//    dim3 DimBlock(16, 16, 1);
-//
-//    int shared_mem_size = filter_size;
-//    clock_t begin = clock();
-//    blurFilterKernelDynamicSharedMem<<<DimGrid, DimBlock, shared_mem_size, 0>>>(d_blurred_image, d_input_image, d_blur_filter, 
-//            x_cols, y_rows, filter_size);
-//
-//    // Check for any errors launching the kernel
-//    checkCuda(cudaGetLastError());
-//    
-//    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-//    // any errors encountered during the launch.
-//    checkCuda(cudaDeviceSynchronize());
-//    clock_t end = clock();
-//    double time_spent = (double)((end - begin) / ((double)1000));
-//
-//    // Copy output vector from GPU buffer to host memory.
-//    checkCuda(cudaMemcpy(h_blurred_image, d_blurred_image, image_size, cudaMemcpyDeviceToHost));
-//
-//    checkCuda(cudaFree(d_blurred_image));
-//    checkCuda(cudaFree(d_input_image));
-//    checkCuda(cudaFree(d_blur_filter));
-//
-//}

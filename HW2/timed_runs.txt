@@ -1,0 +1,72 @@
+Blurring ./hw2_testimage1.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 1.787000 ms
+Timer 2: 1.281000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 0.576000 ms
+Timer 2: 0.235000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 0.566000 ms
+Timer 2: 0.200000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 9.027000 ms
+
+Blurring ./hw2_testimage2.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 1.044000 ms
+Timer 2: 0.463000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 0.976000 ms
+Timer 2: 0.550000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 0.908000 ms
+Timer 2: 0.437000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 41.890000 ms
+
+Blurring ./hw2_testimage3.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 1.750000 ms
+Timer 2: 1.193000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 1.843000 ms
+Timer 2: 1.302000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 1.727000 ms
+Timer 2: 1.161000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 113.910000 ms
+
+Blurring ./hw2_testimage4.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 18.204000 ms
+Timer 2: 13.454000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 17.474000 ms
+Timer 2: 15.083000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 15.895000 ms
+Timer 2: 13.312000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 1865.244000 ms
+

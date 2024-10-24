@@ -1,0 +1,84 @@
+  blurFilterKernelStaticSharedMem(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (15, 15, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- ------------
+    Metric Name                         Metric Unit Metric Value
+    ----------------------------------- ----------- ------------
+    dram__bytes.sum                           Kbyte       308.48
+    dram__bytes_read.sum                      Kbyte       308.48
+    dram__bytes_write.sum                      byte            0
+    dram__sectors_read.sum                   sector        9,640
+    dram__sectors_write.sum                  sector            0
+    gpu__cycles_elapsed.sum                   cycle      201,049
+    gpu__time_duration.avg                       us       167.58
+    gpu__time_duration.sum                       us       167.58
+    sm__cycles_elapsed.avg                    cycle   241,125.50
+    sm__cycles_elapsed.avg.per_second           Ghz         1.44
+    sm__inst_executed.sum                      inst   25,217,316
+    smsp__cycles_elapsed.sum                  cycle   65,586,136
+    smsp__cycles_elapsed.sum.per_second         Ghz       391.36
+    smsp__inst_executed.sum                    inst   25,217,316
+    ----------------------------------- ----------- ------------
+
+  blurFilterKernelStaticSharedMem(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (32, 32, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- ------------
+    Metric Name                         Metric Unit Metric Value
+    ----------------------------------- ----------- ------------
+    dram__bytes.sum                           Mbyte         1.79
+    dram__bytes_read.sum                      Mbyte         1.53
+    dram__bytes_write.sum                     Kbyte       260.61
+    dram__sectors_read.sum                   sector       47,784
+    dram__sectors_write.sum                  sector        8,144
+    gpu__cycles_elapsed.sum                   cycle      706,628
+    gpu__time_duration.avg                       us       588.90
+    gpu__time_duration.sum                       us       588.90
+    sm__cycles_elapsed.avg                    cycle   846,528.21
+    sm__cycles_elapsed.avg.per_second           Ghz         1.44
+    sm__inst_executed.sum                      inst  114,928,560
+    smsp__cycles_elapsed.sum                  cycle  230,255,672
+    smsp__cycles_elapsed.sum.per_second         Ghz       391.00
+    smsp__inst_executed.sum                    inst  114,928,560
+    ----------------------------------- ----------- ------------
+
+  blurFilterKernelStaticSharedMem(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (54, 54, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- ------------
+    Metric Name                         Metric Unit Metric Value
+    ----------------------------------- ----------- ------------
+    dram__bytes.sum                           Mbyte         2.61
+    dram__bytes_read.sum                      Mbyte         2.61
+    dram__bytes_write.sum                      byte            0
+    dram__sectors_read.sum                   sector       81,484
+    dram__sectors_write.sum                  sector            0
+    gpu__cycles_elapsed.sum                   cycle    1,752,017
+    gpu__time_duration.avg                       ms         1.46
+    gpu__time_duration.sum                       ms         1.46
+    sm__cycles_elapsed.avg                    cycle 2,102,031.18
+    sm__cycles_elapsed.avg.per_second           Ghz         1.44
+    sm__inst_executed.sum                      inst  321,059,160
+    smsp__cycles_elapsed.sum                  cycle  571,752,480
+    smsp__cycles_elapsed.sum.per_second         Ghz       391.59
+    smsp__inst_executed.sum                    inst  321,059,160
+    ----------------------------------- ----------- ------------
+
+  blurFilterKernelStaticSharedMem(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (189, 252, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- -------------
+    Metric Name                         Metric Unit  Metric Value
+    ----------------------------------- ----------- -------------
+    dram__bytes.sum                           Mbyte        224.18
+    dram__bytes_read.sum                      Mbyte        124.27
+    dram__bytes_write.sum                     Mbyte         99.91
+    dram__sectors_read.sum                   sector     3,883,508
+    dram__sectors_write.sum                  sector     3,122,236
+    gpu__cycles_elapsed.sum                   cycle    21,121,078
+    gpu__time_duration.avg                       ms         18.78
+    gpu__time_duration.sum                       ms         18.78
+    sm__cycles_elapsed.avg                    cycle 25,344,172.18
+    sm__cycles_elapsed.avg.per_second           Ghz          1.35
+    sm__inst_executed.sum                      inst 4,029,085,729
+    smsp__cycles_elapsed.sum                  cycle 6,893,614,832
+    smsp__cycles_elapsed.sum.per_second         Ghz        367.15
+    smsp__inst_executed.sum                    inst 4,029,085,729
+    ----------------------------------- ----------- -------------
+
