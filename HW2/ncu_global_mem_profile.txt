@@ -1,0 +1,163 @@
+==PROF== Connected to process 119598 (/home/patrickhowe/repos/gpu-programming/HW2/hw2_starter)
+==PROF== Profiling "blurFilterKernel": 0%....50%....100% - 1 pass
+==PROF== Profiling "blurFilterKernel": 0%....50%....100% - 1 pass
+==PROF== Profiling "blurFilterKernel": 0%....50%....100% - 1 pass
+==PROF== Profiling "blurFilterKernel": 0%....50%....100% - 1 pass
+Blurring ./hw2_testimage1.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 86.162000 ms
+Timer 2: 85.554000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 1.339000 ms
+Timer 2: 0.714000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 0.927000 ms
+Timer 2: 0.555000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 8.759000 ms
+
+Blurring ./hw2_testimage2.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 4.979000 ms
+Timer 2: 4.484000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 1.389000 ms
+Timer 2: 0.870000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 1.287000 ms
+Timer 2: 0.759000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 39.494000 ms
+
+Blurring ./hw2_testimage3.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 6.650000 ms
+Timer 2: 5.800000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 2.326000 ms
+Timer 2: 1.752000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 1.945000 ms
+Timer 2: 1.426000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 109.558000 ms
+
+Blurring ./hw2_testimage4.png
+------------------------------------------ 
+
+Running blur kernel using global memory...
+Timer 1: 23.686000 ms
+Timer 2: 19.262000 ms
+
+Running blur kernel using static shared memory...
+Timer 1: 22.312000 ms
+Timer 2: 17.597000 ms
+
+Running blur kernel using dynamic shared memory...
+Timer 1: 18.553000 ms
+Timer 2: 14.390000 ms
+
+Running CPU sequential blur kernel...
+CPU Timer: 1899.883000 ms
+
+==PROF== Disconnected from process 119598
+[119598] hw2_starter@127.0.0.1
+  blurFilterKernel(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (15, 15, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- ------------
+    Metric Name                         Metric Unit Metric Value
+    ----------------------------------- ----------- ------------
+    dram__bytes.sum                           Kbyte       920.45
+    dram__bytes_read.sum                      Kbyte       920.45
+    dram__bytes_write.sum                      byte            0
+    dram__sectors_read.sum                   sector       28,764
+    dram__sectors_write.sum                  sector            0
+    gpu__cycles_elapsed.sum                   cycle      180,278
+    gpu__time_duration.avg                       us       150.27
+    gpu__time_duration.sum                       us       150.27
+    sm__cycles_elapsed.avg                    cycle   216,203.03
+    sm__cycles_elapsed.avg.per_second           Ghz         1.44
+    sm__inst_executed.sum                      inst   22,315,086
+    smsp__cycles_elapsed.sum                  cycle   58,807,224
+    smsp__cycles_elapsed.sum.per_second         Ghz       391.34
+    smsp__inst_executed.sum                    inst   22,315,086
+    ----------------------------------- ----------- ------------
+
+  blurFilterKernel(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (32, 32, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- ------------
+    Metric Name                         Metric Unit Metric Value
+    ----------------------------------- ----------- ------------
+    dram__bytes.sum                           Kbyte       853.25
+    dram__bytes_read.sum                      Kbyte       853.25
+    dram__bytes_write.sum                      byte            0
+    dram__sectors_read.sum                   sector       26,664
+    dram__sectors_write.sum                  sector            0
+    gpu__cycles_elapsed.sum                   cycle      595,611
+    gpu__time_duration.avg                       us       496.38
+    gpu__time_duration.sum                       us       496.38
+    sm__cycles_elapsed.avg                    cycle   713,470.82
+    sm__cycles_elapsed.avg.per_second           Ghz         1.44
+    sm__inst_executed.sum                      inst  101,670,576
+    smsp__cycles_elapsed.sum                  cycle  194,064,064
+    smsp__cycles_elapsed.sum.per_second         Ghz       390.96
+    smsp__inst_executed.sum                    inst  101,670,576
+    ----------------------------------- ----------- ------------
+
+  blurFilterKernel(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (54, 54, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- ------------
+    Metric Name                         Metric Unit Metric Value
+    ----------------------------------- ----------- ------------
+    dram__bytes.sum                           Mbyte         7.95
+    dram__bytes_read.sum                      Mbyte         7.26
+    dram__bytes_write.sum                     Kbyte       695.04
+    dram__sectors_read.sum                   sector      226,792
+    dram__sectors_write.sum                  sector       21,720
+    gpu__cycles_elapsed.sum                   cycle    1,495,106
+    gpu__time_duration.avg                       ms         1.25
+    gpu__time_duration.sum                       ms         1.25
+    sm__cycles_elapsed.avg                    cycle 1,793,677.62
+    sm__cycles_elapsed.avg.per_second           Ghz         1.44
+    sm__inst_executed.sum                      inst  284,053,503
+    smsp__cycles_elapsed.sum                  cycle  487,880,312
+    smsp__cycles_elapsed.sum.per_second         Ghz       391.57
+    smsp__inst_executed.sum                    inst  284,053,503
+    ----------------------------------- ----------- ------------
+
+  blurFilterKernel(unsigned char *, const unsigned char *, const unsigned char *, unsigned int, unsigned int, unsigned int) (189, 252, 1)x(16, 16, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: Command line profiler metrics
+    ----------------------------------- ----------- -------------
+    Metric Name                         Metric Unit  Metric Value
+    ----------------------------------- ----------- -------------
+    dram__bytes.sum                           Mbyte         58.99
+    dram__bytes_read.sum                      Mbyte         49.49
+    dram__bytes_write.sum                     Mbyte          9.51
+    dram__sectors_read.sum                   sector     1,546,424
+    dram__sectors_write.sum                  sector       297,064
+    gpu__cycles_elapsed.sum                   cycle    17,676,113
+    gpu__time_duration.avg                       ms         14.73
+    gpu__time_duration.sum                       ms         14.73
+    sm__cycles_elapsed.avg                    cycle 21,210,868.50
+    sm__cycles_elapsed.avg.per_second           Ghz          1.44
+    sm__inst_executed.sum                      inst 3,557,124,300
+    smsp__cycles_elapsed.sum                  cycle 5,769,356,232
+    smsp__cycles_elapsed.sum.per_second         Ghz        391.67
+    smsp__inst_executed.sum                    inst 3,557,124,300
+    ----------------------------------- ----------- -------------
+
