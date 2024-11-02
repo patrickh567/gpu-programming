@@ -166,9 +166,14 @@ void verifyKernels() {
             << nVals[k] << ", P=" << pVals[k] << std::endl;
         std::cout << "-------------------------------------------------------------------" << std::endl;
         cpuMMult(h_A, h_B, cpu_C, mVals[k], nVals[k], pVals[k]);
+        std::cout << "Tiled shared memory" << std::endl;
         launchMMultKernel(&cudaSharedTiledMMult, h_A, h_B, h_C, mVals[k], nVals[k], pVals[k], 16);
         float errorFraction = verifyCudaMatrix(cpu_C, h_C, mVals[k], nVals[k]);
-        std::cout << "Max Error Fraction: " << errorFraction << std::endl;
+        std::cout << "Max Error Fraction tiled shared memory: " << errorFraction << std::endl;
+        std::cout << std::endl << "Global memory" << std::endl;
+        launchMMultKernel(&cudaGlobalMMult, h_A, h_B, h_C, mVals[k], nVals[k], pVals[k], 16);
+        errorFraction = verifyCudaMatrix(cpu_C, h_C, mVals[k], nVals[k]);
+        std::cout << "Max Error Fraction global memory: " << errorFraction << std::endl;
         free(h_A);
         free(h_B);
         free(h_C);
