@@ -1,0 +1,3 @@
+[submodule "FinalProject/CUDAMicroBench"]
+	path = FinalProject/CUDAMicroBench
+	url = https://github.com/passlab/CUDAMicroBench.git
